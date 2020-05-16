@@ -3,8 +3,10 @@
 This responsity is built for classifying the smart contract in Ethereum by analysing transaction behaviors. The whole classification work is designed for a competition.
 All the transaction data are collected from a PostgreSQL database server. 
 
-## Feature
-## 特征
+通过分析链上交易行为来鉴别Ethereum中的庞氏智能合约。这个项目仅是比赛项目的一部分工作。
+所有的交易数据来自某高校课题组提供的PostgreSQL数据库服务器。
+
+## Feature 特征
 
 ```python
 ft_names = [
@@ -26,7 +28,7 @@ ft_names = [
 
 要得到以上特征，需要合约标签（`ponzi`）、向合约转账的金额列表(`val_in`)、合约分红的金额列表(`val_out`)、合约生存周期(`lifetime=max(time_in+time_out)-min(timein+time_out)`)。
 
-## 数据处理
+## Data Processing 数据处理
 
 ### 1 addr 庞氏合约与正常合约地址列表
 
@@ -51,29 +53,6 @@ for i in range(len(addr)):
     
 with open('add_nponzi_code.csv','w') as f:
     f.writelines(addr)
-```
-
-浙大数据库的部分表如下：
-
-```
- public | ac2_external_target          | table | tch
- public | ac_target                    | table | gpadmin
- public | balance                      | table | gpadmin
- public | block                        | table | gpadmin
- public | code                         | table | gpadmin
- public | code_temp                    | table | gpadmin
- public | create_account               | table | gpadmin
- public | critical_keys                | table | dmc
- public | erc20_transfer               | table | gpadmin
- public | external_transaction         | table | gpadmin
- public | internal_transaction         | table | gpadmin
- public | nonce                        | table | gpadmin
- public | price                        | table | dmc
- public | private_key                  | table | gpadmin
- public | reentrancy                   | table | gpadmin
- public | storage                      | table | dmc
- public | suicide                      | table | gpadmin
- public | transaction_log              | table | gpadmin
 ```
 
 ### 2 val_in 向合约转账的金额列表
