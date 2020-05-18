@@ -93,14 +93,13 @@ def collectAddr(p, n=N, timeout=120):
 def collectTxnIn(p, addr):
     import sql_query as sq
 
-    print('Collecting transaction in')
+    print('Collecting transactions into contract')
     query_in = [
         'select block_hash,value from external_transaction where to_address=\'',
         '\';\r'
         ]
-    name = addr.split('/')[1]
-    name = name.split('.')[0]
-    print('file name: '+name)
+    name = os.path.basename(addr)
+    print('address file name: '+name)
 
     # write query file for block_hash and txn value
     sql_file = os.path.join('sql',name+'in.sql')
@@ -113,7 +112,7 @@ def collectTxnIn(p, addr):
 
     # write query file for timestamp
     txn_file = os.path.join('result',name+'_in.csv')
-    hash_sql = sq.deal_in(addr, out_file, txn_file)
+    hash_sql = deal_sql.deal_in(addr, out_file, txn_file)
 
     # send command to sql process
     time_file = os.path.join('result',name+'_time.out')
@@ -129,14 +128,13 @@ def collectTxnIn(p, addr):
 def collectTxnOut(p, addr):
     import sql_query as sq
 
-    print('Collecting transaction out')
+    print('Collecting transactions out of contract')
     query_out = [
         'select timestamp, value from internal_transaction where from_address=\'\\',
         '\';\r'
     ]
-    name = addr.split('/')[1]
-    name = name.split('.')[0]
-    print('file name: '+name)
+    name = os.path.basename(addr)
+    print('address file name: '+name)
 
     # write query file for block_hash and txn value
     sql_file = os.path.join('sql',name+'out.sql')
@@ -167,15 +165,16 @@ if __name__=='__main__':
     psql = 'psql --host 192.168.1.2 -U gby ethereum'
 
     # collect addresses
-    p = connectPSQL(psql)
-    for i in range(int(Round)):
-        print('Collecting round ', i)
-        collectAddr(p)
-    p.sendline('\q')
-    p.close()
+    # p = connectPSQL(psql)
+    # for i in range(int(Round)):
+    #     print('Collecting round ', i)
+    #     collectAddr(p)
+    # p.sendline('\q')
+    # p.close()
 
     # collect val and time sequence from addresses
     p = connectPSQL(psql)
+
     dirPath = 'test_addr'
     addrs = os.listdir(dirPath)
     for addr in addrs:

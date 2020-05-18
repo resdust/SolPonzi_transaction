@@ -9,12 +9,15 @@ First, excute sql_query.val_sql() to get sql command files for
 queries of transactions.
 Then excure the query files on database server to get out files.
 """
+
 def readAddr(addr):
     with open(addr)as f:
         addrs = []
         lines = f.readlines()
     for line in lines:
         line = line.strip()
+        if line == '':
+            continue
         if line[0]=='\\':
             a = line
             addrs.append(a)

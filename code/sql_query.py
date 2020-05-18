@@ -17,6 +17,8 @@ def readAddr(addr):
         lines = f.readlines()
     for line in lines:
         line = line.strip()
+        if line == '':
+            continue
         if line[0]=='\\':
             a = line
             addrs.append(a)
@@ -26,9 +28,7 @@ def val_sql(addr_file, file,query):
     ponzi_addr = readAddr(addr_file)
     with open(file,'w',encoding='utf-8') as f:
         for data in ponzi_addr:
-            a = data[0]
-            a = a[2:]
-            sentence = query[0]+a+query[1]
+            sentence = query[0]+data+query[1]
             f.write(sentence)
     print('---Have generated '+file+'.---')
 
