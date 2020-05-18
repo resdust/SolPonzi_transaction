@@ -1,26 +1,36 @@
 import pandas as pd
 import os
 
-def val_sql(in_file, file,query):
-    addr = in_file
-    ponzi_addr = pd.read_csv(addr)
-    ponzi_addr = ponzi_addr.values
+query_out = [
+    'select timestamp, value from internal_transaction where from_address=\'\\',
+    '\';\r'
+]
+
+query_in = [
+    'select block_hash,value from external_transaction where to_address=\'',
+    '\';\r'
+]
+
+def readAddr(addr):
+    with open(addr)as f:
+        addrs = []
+        lines = f.readlines()
+    for line in lines:
+        line = line.strip()
+        if line[0]=='\\':
+            a = line
+            addrs.append(a)
+    return addrs
+
+def val_sql(addr_file, file,query):
+    ponzi_addr = readAddr(addr_file)
     with open(file,'w',encoding='utf-8') as f:
         for data in ponzi_addr:
             a = data[0]
             a = a[2:]
-            sentence = query+a+'\';\r'
+            sentence = query[0]+a+query[1]
             f.write(sentence)
     print('---Have generated '+file+'.---')
-
-query_out = 'select * from internal_transaction where from_address=\'\\'
-query_in = 'select * from external_transaction where to_address=\'\\'
-
-# val_sql(os.path.join('database','add_ponzi.csv'),'ponzi_val_out.sql',query_out)
-# val_sql(os.path.join('database','add_ponzi.csv'),'ponzi_val_in.sql',query_in)
-
-val_sql(os.path.join('database','add_nponzi_code.csv'),'nponzi_val_out.sql',query_out)
-val_sql(os.path.join('database','add_nponzi_code.csv'), 'nponzi_val_in.sql', query_in)
 
 def timestamp_sql(in_file, file):
     f = in_file
@@ -32,5 +42,12 @@ def timestamp_sql(in_file, file):
             f.write(sentence)
     print('---Have generated '+file+'.---')
 
-# timestamp_sql(os.path.join('database','ponzi_hashes_in.csv'),'ponzi_timestamp_in.sql')
-# timestamp_sql(os.path.join('database','nponzi_hashes_in.csv'),'nponzi_timstamp_in.sql')
+if __name__=='__main__':
+    # val_sql(os.path.join('database','add_ponzi.csv'),'ponzi_val_out.sql',query_out)
+    # val_sql(os.path.join('database','add_ponzi.csv'),'ponzi_val_in.sql',query_in)
+
+    val_sql(os.path.join('database','add_nponzi_code.csv'),'nponzi_val_out.sql',query_out)
+    val_sql(os.path.join('database','add_nponzi_code.csv'), 'nponzi_val_in.sql', query_in)
+        
+    timestamp_sql(os.path.join('database','ponzi_hashes_in.csv'),'ponzi_timestamp_in.sql')
+    timestamp_sql(os.path.join('database','nponzi_hashes_in.csv'),'nponzi_timstamp_in.sql')

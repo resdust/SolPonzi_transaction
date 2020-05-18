@@ -12,6 +12,7 @@ import os
 import sys
 import pandas as pd
 import pexpect
+import deal_sql
 
 N = 1000 # query N instances each time
 
@@ -63,7 +64,7 @@ def collectAddr(p, n=N, timeout=120):
     new = int(last)+N
 
     # os.makedirs('test_addr')
-    out_file = os.path.join('test_addr','addr_'+last+'.out')
+    out_file = os.path.join('result','addr_'+last+'.out')
     print(out_file)
     p.sendline('\o ' + out_file)
     p.expect('#')
@@ -73,7 +74,7 @@ def collectAddr(p, n=N, timeout=120):
     '+str(N)+' OFFSET '+str(last)+') ORDER BY number DESC;'
     p.sendline(query)
     print('Excuting query \''+query+'\', raising TimeOut \
-        exception in '+timeout+' sec.')
+        exception in '+str(timeout)+' sec.')
     p.expect('#',timeout=timeout)
     print('Done query.')
 
@@ -83,37 +84,74 @@ def collectAddr(p, n=N, timeout=120):
         out = out[-2]
     except:
         print('Failed to write the results')
-        p.kill(0)
+        p.close()
         sys.exit(1)
 
-    print('Collected address '+out+'. Written in '+out_file+' .')
+    print('Collected address '+out+'\nWritten in '+out_file+' .')
     writeLog(log_file,new)
 
 def collectTxnIn(p, addr):
     import sql_query as sq
 
     print('Collecting transaction in')
-    query = [
-        'select to_address,block_hash,value from external_transaction where to_address=\'',
+    query_in = [
+        'select block_hash,value from external_transaction where to_address=\'',
         '\';\r'
         ]
+    name = addr.split('/')[1]
+    name = name.split('.')[0]
+    print('file name: '+name)
 
-    sql_file = os.path.join('sql',addr.split('.')[0]+'.sql')
-    with open(sql_file,'w') as f:
-        pass
+    # write query file for block_hash and txn value
+    sql_file = os.path.join('sql',name+'in.sql')
+    sq.val_sql(addr, sql_file, query_in)
     
-    with open(addr)as f:
-        lines = f.readlines()
-        for line in lines:
-            line = line.strip()
-            if line[0]=='\\':
-                a = line
-                q = query[0]+a+query[1]
-                with open(sql_file,'a') as f:
-                    f.write(q)
+    # send command to sql process
+    out_file = os.path.join('result',name+'_in.out')
+    p.sendline('\o '+out_file)
+    p.sendline('\i '+sql_file)
 
-def collectTxnOut():
+    # write query file for timestamp
+    txn_file = os.path.join('result',name+'_in.csv')
+    hash_sql = sq.deal_in(addr, out_file, txn_file)
+
+    # send command to sql process
+    time_file = os.path.join('result',name+'_time.out')
+    p.sendline('\o '+time_file)
+    p.sendline('\i '+hash_sql)
+
+    # collect the query result into txn features
+    txn_file = os.path.join('result',addr.split('.')[0]+'_in.csv')
+    deal_sql.deal_in_timestamp(txn_file, time_file, txn_file)
+
+    return txn_file
+
+def collectTxnOut(p, addr):
+    import sql_query as sq
+
     print('Collecting transaction out')
+    query_out = [
+        'select timestamp, value from internal_transaction where from_address=\'\\',
+        '\';\r'
+    ]
+    name = addr.split('/')[1]
+    name = name.split('.')[0]
+    print('file name: '+name)
+
+    # write query file for block_hash and txn value
+    sql_file = os.path.join('sql',name+'out.sql')
+    sq.val_sql(addr, sql_file, query_out)
+
+    # send command to sql process
+    out_file = os.path.join('result',name+'_out.out')
+    p.sendline('\o '+out_file)
+    p.sendline('\i '+sql_file)
+
+    # collect the query result into txn features
+    txn_file = os.path.join('result',name+'_out.csv')
+    deal_sql.deal_out(addr, out_file, txn_file)
+
+    return txn_file
       	
 if __name__=='__main__':
     args = sys.argv
@@ -130,12 +168,11 @@ if __name__=='__main__':
 
     # collect addresses
     p = connectPSQL(psql)
-    p = None
     for i in range(int(Round)):
         print('Collecting round ', i)
         collectAddr(p)
     p.sendline('\q')
-    p.kill(0)
+    p.close()
 
     # collect val and time sequence from addresses
     p = connectPSQL(psql)
@@ -144,8 +181,10 @@ if __name__=='__main__':
     for addr in addrs:
         if addr[0]!='d':
             full_path = os.path.join(dirPath,addr)
-            collectTxnIn(full_path)
-            collectTxnOut(full_path)
+            feature = 'test_'+addr.split('.')[0].split('_')[1]+'.csv'
+            in_csv = collectTxnIn(p,full_path)
+            out_csv = collectTxnOut(p,full_path)
+            deal_sql.deal_feature(in_csv, out_csv, feature)
             os.rename(full_path,os.path.join(dirPath,'done-'+addr))
 
     p.close()
