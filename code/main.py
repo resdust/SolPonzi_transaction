@@ -115,9 +115,10 @@ def collectTxnIn(p, addr):
     # write query file for timestamp
     txn_file = os.path.join('result',name+'_in.csv')
     hash_sql = deal_sql.deal_in(addr, out_file, txn_file)
+    time_file = os.path.join('result',name+'_time.out')
+    sq.timestamp_sql(hash_file, time_file)
 
     # send command to sql process
-    time_file = os.path.join('result',name+'_time.out')
     p.sendline('\o '+time_file)
     p.expect('#')
     p.sendline('\i '+hash_sql)
