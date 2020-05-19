@@ -102,13 +102,15 @@ def collectTxnIn(p, addr):
     print('address file name: '+name)
 
     # write query file for block_hash and txn value
-    sql_file = os.path.join('sql',name+'in.sql')
+    sql_file = os.path.join('sql',name+'_in.sql')
     sq.val_sql(addr, sql_file, query_in)
     
     # send command to sql process
     out_file = os.path.join('result',name+'_in.out')
     p.sendline('\o '+out_file)
+    p.expect('#')
     p.sendline('\i '+sql_file)
+    p.expect('#')
 
     # write query file for timestamp
     txn_file = os.path.join('result',name+'_in.csv')
@@ -117,7 +119,9 @@ def collectTxnIn(p, addr):
     # send command to sql process
     time_file = os.path.join('result',name+'_time.out')
     p.sendline('\o '+time_file)
+    p.expect('#')
     p.sendline('\i '+hash_sql)
+    p.expect('#')
 
     # collect the query result into txn features
     txn_file = os.path.join('result',addr.split('.')[0]+'_in.csv')
@@ -137,13 +141,15 @@ def collectTxnOut(p, addr):
     print('address file name: '+name)
 
     # write query file for block_hash and txn value
-    sql_file = os.path.join('sql',name+'out.sql')
+    sql_file = os.path.join('sql',name+'_out.sql')
     sq.val_sql(addr, sql_file, query_out)
 
     # send command to sql process
     out_file = os.path.join('result',name+'_out.out')
     p.sendline('\o '+out_file)
+    p.expect('#')
     p.sendline('\i '+sql_file)
+    p.expect('#')
 
     # collect the query result into txn features
     txn_file = os.path.join('result',name+'_out.csv')

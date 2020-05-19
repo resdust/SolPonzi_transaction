@@ -31,13 +31,12 @@ def deal_out(addr_file,in_file,to_file):
     transactions = []
 
     with open(in_file,'r',encoding='utf-8') as f:
-        line = f.readline()
+        line = f.readline().strip()
         index = 0
         while(line!='EOF'):
-            line = line.strip()
             data = []
             if line == '':
-                line = f.readline()
+                line = f.readline().strip()
                 continue
 
             if line[0] == '(':
@@ -49,7 +48,7 @@ def deal_out(addr_file,in_file,to_file):
                     attributes[i] = attributes[i].strip()
                 data = [address[index], attributes[0], attributes[1]]
                 transactions.append(data)
-            line = f.readline()
+            line = f.readline().strip()
 
     df = pd.DataFrame(data=transactions, columns=names_transaction)
     df.to_csv(to_file,index=False)
@@ -65,11 +64,10 @@ def deal_in(addr_file, in_file, to_file):
 
     with open(in_file,'r',encoding='utf-8') as f:
         index = 0
-        line = f.readline()
+        line = f.readline().strip()
         while(line!='EOF'):
-            line = line.strip()
             if line == '':
-                line = f.readline()
+                line = f.readline().strip()
                 continue
     
             if line[0] == '(':
@@ -83,7 +81,7 @@ def deal_in(addr_file, in_file, to_file):
                 data = [address[index], '',attributes[1]]
                 block_hash.append(attributes[0])
                 transactions.append(data)
-            line = f.readline()
+            line = f.readline().strip()
 
     df = pd.DataFrame(data=transactions, columns=names_transaction)
     df.to_csv(to_file,index=False)
@@ -93,7 +91,7 @@ def deal_in(addr_file, in_file, to_file):
     record block hashes dumping into file, 
     then pull timestamp of the block as the timestamp of transactions
     '''
-    hash_file = os.path.join('sql',addr_file.split('.')[0]+'_hash.sql')
+    hash_file = os.path.join('sql',os.path.basename(addr_file).split('.')[0]+'_hash.sql')
     hashes = pd.DataFrame(data=block_hash,columns=['block_hash'])
     hashes.to_csv(hash_file,index=False)
     print('Generated '+hash_file)
