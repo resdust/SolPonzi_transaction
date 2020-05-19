@@ -13,6 +13,7 @@ import sys
 import pandas as pd
 import pexpect
 import deal_sql
+import color
 
 N = 1000 # query N instances each time
 
@@ -52,7 +53,7 @@ def connectPSQL(psql):
     pwd = getpass.getpass('Password:')
     p.sendline(pwd)
     p.expect('#')
-    print('Successfully connected to PostgreSQL!')
+    color.pImportant('Successfully connected to PostgreSQL!')
 
     return p
 
@@ -65,7 +66,6 @@ def collectAddr(p, n=N, timeout=120):
 
     # os.makedirs('test_addr')
     out_file = os.path.join('result','addr_'+last+'.out')
-    print(out_file)
     p.sendline('\o ' + out_file)
     p.expect('#')
 
@@ -73,33 +73,33 @@ def collectAddr(p, n=N, timeout=120):
     (SELECT to_address from external_transaction WHERE value!=\'0\' ORDER BY number DESC limit \
     '+str(N)+' OFFSET '+str(last)+') ORDER BY number DESC;'
     p.sendline(query)
-    print('Excuting query \''+query+'\', raising TimeOut \
+    color.pInfo('Excuting query \''+query+'\', raising TimeOut \
         exception in '+str(timeout)+' sec.')
     p.expect('#',timeout=timeout)
-    print('Done query.')
+    color.pDone('Done query.')
 
     with open(out_file) as f:
         out = f.readlines()
     try:
         out = out[-2]
     except:
-        print('Failed to write the results')
+        color.pError('Failed to write the results')
         p.close()
         sys.exit(1)
 
-    print('Collected address '+out+'\nWritten in '+out_file+' .')
+    color.pDone('Collected address '+out+'\nWritten in '+out_file+' .')
     writeLog(log_file,new)
 
 def collectTxnIn(p, addr):
     import sql_query as sq
 
-    print('Collecting transactions into contract')
+    color.pInfo('Collecting transactions into contract')
     query_in = [
         'select block_hash,value from external_transaction where to_address=\'',
         '\' and value!=\'0\';\r'
         ]
     name = os.path.basename(addr).split('.')[0]
-    print('address file name: '+name)
+    color.pInfo('address file name: '+name)
 
     # write query file for block_hash and txn value
     sql_file = os.path.join('sql',name+'_in.sql')
@@ -125,20 +125,20 @@ def collectTxnIn(p, addr):
 
     # collect the query result into txn features
     txn_file = os.path.join('result',addr.split('.')[0]+'_in.csv')
-    deal_sql.deal_in_timestamp(txn_file, time_file, txn_file)
+    deal_sql.deal_in_timestamp(txn_file, time_file)
 
     return txn_file
 
 def collectTxnOut(p, addr):
     import sql_query as sq
 
-    print('Collecting transactions out of contract')
+    color.pInfo('Collecting transactions out of contract')
     query_out = [
         'select timestamp, value from internal_transaction where from_address=\'\\',
         '\' and value!=\'0\';\r'
     ]
     name = os.path.basename(addr).split('.')[0]
-    print('address file name: '+name)
+    color.pInfo('address file name: '+name)
 
     # write query file for block_hash and txn value
     sql_file = os.path.join('sql',name+'_out.sql')
@@ -156,27 +156,28 @@ def collectTxnOut(p, addr):
     deal_sql.deal_out(addr, out_file, txn_file)
 
     return txn_file
-      	
+   	
 if __name__=='__main__':
-    args = sys.argv
+    Round = None
     try:
-        Round = args[1]
+        Round = sys.argv[1]
     except:
-        print('usage: python main.py [Round]')
-        sys.exit(1)
+        color.pInfo('Starting with collecting addresses, usage: python main.py [Round]')
+        color.pInfo('If you have collected addresses in test_addr, ignore it.')
 
     # os.makedirs('log')
     # os.makedirs('sql')
 
     psql = 'psql --host 192.168.1.2 -U gby ethereum'
-
-    # collect addresses
-    # p = connectPSQL(psql)
-    # for i in range(int(Round)):
-    #     print('Collecting round ', i)
-    #     collectAddr(p)
-    # p.sendline('\q')
-    # p.close()
+    
+    if Round:
+        # collect addresses
+        p = connectPSQL(psql)
+        for i in range(int(Round)):
+            color.pInfo('Collecting round ', i)
+            collectAddr(p)
+        p.sendline('\q')
+        p.close()
 
     # collect val and time sequence from addresses
     p = connectPSQL(psql)
