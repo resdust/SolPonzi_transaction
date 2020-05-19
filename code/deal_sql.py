@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import color
 
 names_feature = ['address','time_in','val_in','time_out','val_out']
 names_transaction = ['address','timestamp','value']
@@ -26,7 +27,7 @@ def readAddr(addr):
 def deal_out(addr_file,in_file,to_file): 
     os.system('echo \"EOF\" >> '+in_file)
 
-    print('-----Dealing with '+in_file+' -----')
+    coloe.pInfo('Dealing with '+in_file)
     address = readAddr(addr_file)
     transactions = []
 
@@ -52,10 +53,10 @@ def deal_out(addr_file,in_file,to_file):
 
     df = pd.DataFrame(data=transactions, columns=names_transaction)
     df.to_csv(to_file,index=False)
-    print('-----Done------')
+    color.pDone('Done')
 
 def deal_in(addr_file, in_file, to_file): 
-    print('-----Dealing with '+in_file+' -----')
+    color.pInfo('Dealing with '+in_file)
     os.system('echo \"EOF\" >> '+in_file)
 
     address = readAddr(addr_file)
@@ -85,7 +86,7 @@ def deal_in(addr_file, in_file, to_file):
 
     df = pd.DataFrame(data=transactions, columns=names_transaction)
     df.to_csv(to_file,index=False)
-    print('-----Done------')
+    color.pDone('Done')
     '''
     Cause the external transaction does not have a timestamp clumns in its table,
     record block hashes dumping into file, 
@@ -94,7 +95,7 @@ def deal_in(addr_file, in_file, to_file):
     hash_file = os.path.join('sql',os.path.basename(addr_file).split('.')[0]+'_hash.sql')
     hashes = pd.DataFrame(data=block_hash,columns=['block_hash'])
     hashes.to_csv(hash_file,index=False)
-    print('Generated '+hash_file)
+    color.pInfo('Generated '+hash_file)
 
     return hash_file
 
@@ -106,7 +107,7 @@ Then excure the query file on database server.
 """
 
 def deal_in_timestamp(txn_file, time_file):
-    print('-----Dealing with '+time_file+' -----')
+    color.pInfo('Dealing with '+time_file)
     transactions = pd.read_csv(txn_file)
     timestamps = []
 
@@ -129,7 +130,7 @@ def deal_in_timestamp(txn_file, time_file):
             transactions.loc[i,'timestamp'] = timestamps[j]
             j = j+1
     transactions.to_csv(txn_file,index=False)
-    print('-----Done------')
+    color.pDone('Done')
 
 def sequence(df):
     from datetime import datetime
@@ -159,7 +160,7 @@ def sequence(df):
     return ins['address'].values,val_ins, time_ins
 
 def deal_feature(file_in, file_out, file_feature, ponzi=None):
-    print('-----Dealing with features-----')
+    color.pInfo('Dealing with features')
     contracts = []
 
     ins = pd.read_csv(file_in,encoding='utf-8')
@@ -188,7 +189,7 @@ def deal_feature(file_in, file_out, file_feature, ponzi=None):
     #     contracts.append(contract)
     df = pd.concat([df_in,df_out],join='outer',axis=1)
     df.to_csv(file_feature, index=False)
-    print('-----Have generated '+file_feature+'.-----')
+    color.pDone('Have generated '+file_feature+'.')
 
 if __name__=='__main__':
     ponzi_val_in = os.path.join('database','ponzi_val_in.out')

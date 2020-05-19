@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import color
 
 query_out = [
     'select timestamp, value from internal_transaction where from_address=\'\\',
@@ -30,7 +31,7 @@ def val_sql(addr_file, file,query):
         for data in ponzi_addr:
             sentence = query[0]+data+query[1]
             f.write(sentence)
-    print('---Have generated '+file+'.---')
+    color.pDone('Have generated '+file+'.')
 
 def timestamp_sql(in_file, file):
     f = in_file
@@ -40,7 +41,7 @@ def timestamp_sql(in_file, file):
             data = data[0][1:]
             sentence = 'select timestamp from block where hash=\'\\'+data+'\';\r'
             f.write(sentence)
-    print('---Have generated '+file+'.---')
+    color.pDone('Have generated '+file+'.')
 
 if __name__=='__main__':
     # val_sql(os.path.join('database','add_ponzi.csv'),'ponzi_val_out.sql',query_out)
