@@ -33,13 +33,12 @@ def val_sql(addr_file, file,query):
             f.write(sentence)
     color.pDone('Have generated '+file+'.')
 
-def timestamp_sql(in_file, file):
-    f = in_file
-    hashes = pd.read_csv(f).values
+def timestamp_sql(in_hash, file):
+    hashes = in_hash
     with open(file,'w',encoding='utf-8') as f:
         for data in hashes:
-            data = data[0][1:]
-            sentence = 'select timestamp from block where hash=\'\\'+data+'\';\r'
+            # data = data[0][1:]
+            sentence = 'select timestamp from block where hash=\''+data+'\';\r'
             f.write(sentence)
     color.pDone('Have generated '+file+'.')
 

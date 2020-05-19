@@ -90,7 +90,7 @@ def collectAddr(p, n=N, timeout=120):
     color.pDone('Collected address '+out+'\nWritten in '+out_file+' .')
     writeLog(log_file,new)
 
-def collectTxnIn(p, addr):
+def collectTxnIn(p, addr, timeout=200):
     import sql_query as sq
 
     color.pInfo('Collecting transactions into contract')
@@ -106,23 +106,25 @@ def collectTxnIn(p, addr):
     sq.val_sql(addr, sql_file, query_in)
     
     # send command to sql process
+    color.pInfo('Sending query '+sql_file+' to psql server')
     out_file = os.path.join('result',name+'_in.out')
     p.sendline('\o '+out_file)
     p.expect('#')
     p.sendline('\i '+sql_file)
-    p.expect('#')
+    p.expect('#',timeout=timeout)
 
     # write query file for timestamp
     txn_file = os.path.join('result',name+'_in.csv')
-    hash_sql = deal_sql.deal_in(addr, out_file, txn_file)
-    time_file = os.path.join('result',name+'_time.out')
-    sq.timestamp_sql(hash_file, time_file)
+    time_sql = deal_sql.deal_in(addr, out_file, txn_file)
+    sq.timestamp_sql(hash_file, time_sql)
 
     # send command to sql process
+    time_file = os.path.join('result',name+'_time.out')
+    color.pInfo('Sending query '+sql_file+' to psql server')
     p.sendline('\o '+time_file)
     p.expect('#')
-    p.sendline('\i '+hash_sql)
-    p.expect('#')
+    p.sendline('\i '+time_sql)
+    p.expect('#',timeout=timeout)
 
     # collect the query result into txn features
     txn_file = os.path.join('result',addr.split('.')[0]+'_in.csv')
@@ -130,7 +132,7 @@ def collectTxnIn(p, addr):
 
     return txn_file
 
-def collectTxnOut(p, addr):
+def collectTxnOut(p, addr, timeout=200):
     import sql_query as sq
 
     color.pInfo('Collecting transactions out of contract')
@@ -150,7 +152,7 @@ def collectTxnOut(p, addr):
     p.sendline('\o '+out_file)
     p.expect('#')
     p.sendline('\i '+sql_file)
-    p.expect('#')
+    p.expect('#', timeout=timeout)
 
     # collect the query result into txn features
     txn_file = os.path.join('result',name+'_out.csv')

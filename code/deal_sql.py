@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import color
+import sql_query as sq
 
 names_feature = ['address','time_in','val_in','time_out','val_out']
 names_transaction = ['address','timestamp','value']
@@ -27,7 +28,7 @@ def readAddr(addr):
 def deal_out(addr_file,in_file,to_file): 
     os.system('echo \"EOF\" >> '+in_file)
 
-    coloe.pInfo('Dealing with '+in_file)
+    color.pInfo('Dealing with '+in_file)
     address = readAddr(addr_file)
     transactions = []
 
@@ -92,12 +93,10 @@ def deal_in(addr_file, in_file, to_file):
     record block hashes dumping into file, 
     then pull timestamp of the block as the timestamp of transactions
     '''
-    hash_file = os.path.join('sql',os.path.basename(addr_file).split('.')[0]+'_hash.sql')
-    hashes = pd.DataFrame(data=block_hash,columns=['block_hash'])
-    hashes.to_csv(hash_file,index=False)
-    color.pInfo('Generated '+hash_file)
+    time_sql = os.path.join('sql',os.path.basename(addr_file).split('.')[0]+'_time.sql')
+    sq.timestamp_sql(block_hash, time_sql)
 
-    return hash_file
+    return time_sql
 
 
 """
