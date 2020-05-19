@@ -70,7 +70,7 @@ def collectAddr(p, n=N, timeout=120):
     p.expect('#')
 
     query='SELECT address FROM code WHERE address IN \
-    (SELECT to_address from external_transaction ORDER BY number DESC limit \
+    (SELECT to_address from external_transaction WHERE value!=\'0\' ORDER BY number DESC limit \
     '+str(N)+' OFFSET '+str(last)+') ORDER BY number DESC;'
     p.sendline(query)
     print('Excuting query \''+query+'\', raising TimeOut \
@@ -96,9 +96,9 @@ def collectTxnIn(p, addr):
     print('Collecting transactions into contract')
     query_in = [
         'select block_hash,value from external_transaction where to_address=\'',
-        '\';\r'
+        '\' and value!=\'0\';\r'
         ]
-    name = os.path.basename(addr)
+    name = os.path.basename(addr).split('.')[0]
     print('address file name: '+name)
 
     # write query file for block_hash and txn value
@@ -131,9 +131,9 @@ def collectTxnOut(p, addr):
     print('Collecting transactions out of contract')
     query_out = [
         'select timestamp, value from internal_transaction where from_address=\'\\',
-        '\';\r'
+        '\' and value!=\'0\';\r'
     ]
-    name = os.path.basename(addr)
+    name = os.path.basename(addr).split('.')[0]
     print('address file name: '+name)
 
     # write query file for block_hash and txn value

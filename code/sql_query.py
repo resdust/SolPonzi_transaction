@@ -3,12 +3,12 @@ import os
 
 query_out = [
     'select timestamp, value from internal_transaction where from_address=\'\\',
-    '\';\r'
+    '\' and value!=\'0\';\r'
 ]
 
 query_in = [
     'select block_hash,value from external_transaction where to_address=\'',
-    '\';\r'
+    '\' and value!=\'0\';\r'
 ]
 
 def readAddr(addr):
