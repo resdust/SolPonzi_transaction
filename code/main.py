@@ -96,35 +96,29 @@ def collectTxnIn(p, addr, timeout=200):
     color.pInfo('Collecting transactions into contract')
     query_in = [
         'select block_hash,value from external_transaction where to_address=\'',
-        '\' and value!=\'0\';\r'
+        '\' and value!=\'0\';'
         ]
     name = os.path.basename(addr).split('.')[0]
     color.pInfo('address file name: '+name)
-
-    # write query file for block_hash and txn value
-    sql_file = os.path.join('sql',name+'_in.sql')
-    sq.val_sql(addr, sql_file, query_in)
-    
+   
     # send command to sql process
-    color.pInfo('Sending query '+sql_file+' to psql server')
     out_file = os.path.join('result',name+'_in.out')
+    color.pInfo('Sending incoming transaction query to psql server')
     p.sendline('\o '+out_file)
     p.expect('#')
-    p.sendline('\i '+sql_file)
-    p.expect('#',timeout=timeout)
-
-    # write query file for timestamp
-    txn_file = os.path.join('result',name+'_in.csv')
-    time_sql = deal_sql.deal_in(addr, out_file, txn_file)
-    sq.timestamp_sql(hash_file, time_sql)
+    sq.val_sql(addr, query_in, p)
+    color.pDone('Have generated '+out_file+'.')
 
     # send command to sql process
+    txn_file = os.path.join('result',name+'_in.csv')
     time_file = os.path.join('result',name+'_time.out')
-    color.pInfo('Sending query '+sql_file+' to psql server')
+    block_hash = deal_sql.deal_in(addr, out_file, txn_file, p)
+
+    color.pInfo('Sending incoming timestamp query to psql server')
     p.sendline('\o '+time_file)
     p.expect('#')
-    p.sendline('\i '+time_sql)
-    p.expect('#',timeout=timeout)
+    sq.timestamp_sql(block_hash, p)
+    color.pDone('Have generated '+time_file+'.')
 
     # collect the query result into txn features
     txn_file = os.path.join('result',addr.split('.')[0]+'_in.csv')
@@ -143,16 +137,11 @@ def collectTxnOut(p, addr, timeout=200):
     name = os.path.basename(addr).split('.')[0]
     color.pInfo('address file name: '+name)
 
-    # write query file for block_hash and txn value
-    sql_file = os.path.join('sql',name+'_out.sql')
-    sq.val_sql(addr, sql_file, query_out)
-
     # send command to sql process
     out_file = os.path.join('result',name+'_out.out')
     p.sendline('\o '+out_file)
     p.expect('#')
-    p.sendline('\i '+sql_file)
-    p.expect('#', timeout=timeout)
+    sq.val_sql(addr, query_out, p)
 
     # collect the query result into txn features
     txn_file = os.path.join('result',name+'_out.csv')

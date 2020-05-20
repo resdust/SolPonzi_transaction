@@ -25,22 +25,20 @@ def readAddr(addr):
             addrs.append(a)
     return addrs
 
-def val_sql(addr_file, file,query):
+def val_sql(addr_file, query, p):
     ponzi_addr = readAddr(addr_file)
-    with open(file,'w',encoding='utf-8') as f:
-        for data in ponzi_addr:
-            sentence = query[0]+data+query[1]
-            f.write(sentence)
-    color.pDone('Have generated '+file+'.')
+    for data in ponzi_addr:
+        sentence = query[0]+data+query[1]
+        p.sendline(sentence)
+        p.expect('#')
 
-def timestamp_sql(in_hash, file):
+def timestamp_sql(in_hash, p):
     hashes = in_hash
-    with open(file,'w',encoding='utf-8') as f:
-        for data in hashes:
-            # data = data[0][1:]
-            sentence = 'select timestamp from block where hash=\''+data+'\';\r'
-            f.write(sentence)
-    color.pDone('Have generated '+file+'.')
+    for data in hashes:
+        # data = data[0][1:]
+        sentence = 'select timestamp from block where hash=\''+data+'\';\r'
+        p.sendline(sentence)
+        p.expect('#')
 
 if __name__=='__main__':
     # val_sql(os.path.join('database','add_ponzi.csv'),'ponzi_val_out.sql',query_out)

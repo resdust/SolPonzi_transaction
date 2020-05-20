@@ -90,13 +90,12 @@ def deal_in(addr_file, in_file, to_file):
     color.pDone('Done')
     '''
     Cause the external transaction does not have a timestamp clumns in its table,
-    record block hashes dumping into file, 
+    record block hashes, 
     then pull timestamp of the block as the timestamp of transactions
     '''
-    time_sql = os.path.join('sql',os.path.basename(addr_file).split('.')[0]+'_time.sql')
-    sq.timestamp_sql(block_hash, time_sql)
+    
+    return block_hash
 
-    return time_sql
 
 
 """
