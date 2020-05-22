@@ -31,6 +31,7 @@ def val_sql(addr_file, query, p):
         sentence = query[0]+data+query[1]
         p.sendline(sentence)
         p.expect('#')
+        p.expect('#')
 
 def timestamp_sql(in_hash, p):
     hashes = in_hash
@@ -38,6 +39,7 @@ def timestamp_sql(in_hash, p):
         # data = data[0][1:]
         sentence = 'select timestamp from block where hash=\''+data+'\';\r'
         p.sendline(sentence)
+        p.expect('#')
         p.expect('#')
 
 if __name__=='__main__':

@@ -47,7 +47,7 @@ def getTime():
 def connectPSQL(psql):
     import getpass
 
-    p = pexpect.spawn(psql)
+    p = pexpect.spawn(psql,logfile=sys.stdoutin)
 
     p.expect('gby:') 
     pwd = getpass.getpass('Password:')
@@ -112,7 +112,7 @@ def collectTxnIn(p, addr, timeout=200):
     # send command to sql process
     txn_file = os.path.join('result',name+'_in.csv')
     time_file = os.path.join('result',name+'_time.out')
-    block_hash = deal_sql.deal_in(addr, out_file, txn_file, p)
+    block_hash = deal_sql.deal_in(addr, out_file, txn_file)
 
     color.pInfo('Sending incoming timestamp query to psql server')
     p.sendline('\o '+time_file)
@@ -139,6 +139,7 @@ def collectTxnOut(p, addr, timeout=200):
 
     # send command to sql process
     out_file = os.path.join('result',name+'_out.out')
+    color.pInfo('Sending outcoming transaction query to psql server')
     p.sendline('\o '+out_file)
     p.expect('#')
     sq.val_sql(addr, query_out, p)
@@ -172,17 +173,18 @@ if __name__=='__main__':
         p.close()
 
     # collect val and time sequence from addresses
-    p = connectPSQL(psql)
 
     dirPath = 'test_addr'
     addrs = os.listdir(dirPath)
     for addr in addrs:
         if addr[0]!='d':
+            p = connectPSQL(psql)
             full_path = os.path.join(dirPath,addr)
             feature = 'test_'+addr.split('.')[0].split('_')[1]+'.csv'
+
             in_csv = collectTxnIn(p,full_path)
             out_csv = collectTxnOut(p,full_path)
             deal_sql.deal_feature(in_csv, out_csv, feature)
+            
             os.rename(full_path,os.path.join(dirPath,'done-'+addr))
-
-    p.close()
+            p.close()    
