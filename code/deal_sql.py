@@ -1,4 +1,4 @@
-import os
+import os,sys
 import pandas as pd
 import color
 import sql_query as sq
@@ -13,6 +13,8 @@ Then excure the query files on database server to get out files.
 """
 
 def readAddr(addr):
+    import pandas as pd
+    '''
     with open(addr)as f:
         addrs = []
         lines = f.readlines()
@@ -23,12 +25,16 @@ def readAddr(addr):
         if line[0]=='\\':
             a = line
             addrs.append(a)
+    '''
+    addrs = pd.read_csv(addr)
+    addrs = addrs.values
+    print('read addrs number:',len(addrs))
     return addrs
 
 def deal_out(addr_file,in_file,to_file): 
+    color.pInfo('Dealing with '+in_file)
     os.system('echo \"EOF\" >> '+in_file)
 
-    color.pInfo('Dealing with '+in_file)
     address = readAddr(addr_file)
     transactions = []
 
@@ -44,7 +50,7 @@ def deal_out(addr_file,in_file,to_file):
             if line[0] == '(':
                 index = index+1
 
-            if line[0] =='\\':
+            if line[0] =='2':
                 attributes = line.split('|')
                 for i in range(len(attributes)):
                     attributes[i] = attributes[i].strip()
@@ -52,6 +58,7 @@ def deal_out(addr_file,in_file,to_file):
                 transactions.append(data)
             line = f.readline().strip()
 
+    color.pInfo('collected '+str(len(transactions))+' transactions.')
     df = pd.DataFrame(data=transactions, columns=names_transaction)
     df.to_csv(to_file,index=False)
     color.pDone('Done')
@@ -80,9 +87,16 @@ def deal_in(addr_file, in_file, to_file):
                 attributes = line.split('|')
                 for i in range(len(attributes)):
                     attributes[i] = attributes[i].strip()
-                data = [address[index], '',attributes[1]]
-                block_hash.append(attributes[0])
-                transactions.append(data)
+                try:
+                    data = [address[index], '',attributes[1]]
+                    block_hash.append(attributes[0])
+                    transactions.append(data)
+                except:
+                    color.pError('out of index')
+                    print('index',index)
+                    print('attribute',attributes)
+                    break
+                    
             line = f.readline().strip()
 
     df = pd.DataFrame(data=transactions, columns=names_transaction)
@@ -106,27 +120,41 @@ Then excure the query file on database server.
 
 def deal_in_timestamp(txn_file, time_file):
     color.pInfo('Dealing with '+time_file)
-    transactions = pd.read_csv(txn_file)
+    os.system('echo \"EOF\" >> '+time_file)
+
+    transactions = pd.read_csv(txn_file, low_memory=False)
     timestamps = []
+    num = 0
 
     with open(time_file,'r',encoding='utf-8') as f:
-        line = f.readline()
+        line = f.readline().strip()
         while(line!='EOF'):
-            line = line.strip()
             if line == '':
-                line = f.readline()
+                line = f.readline().strip()
                 continue
 
             if line[0] =='2':
                 timestamps.append(line)
-            line = f.readline()
-
+                num = num+1
+                if num%1000000==0:
+                    color.pInfo('dealed '+str(num)+' timestamps')
+            line = f.readline().strip()
+    color.pImportant('adding timestamps to transaction')
     j = 0
+    last = transactions['address'][0]
     for i in range(transactions.shape[0]):
+        if i%100000==0:
+            color.pImportant('transaction '+str(i))
+
         if transactions['address'][i]:
             # not empty
             transactions.loc[i,'timestamp'] = timestamps[j]
+            if transactions['address'][i]!=last:
+                color.pInfo('transaction:'+str(i)+transactions['address'][i]+'timestamp:'+str(j))
+            
+            last = transactions['address'][i]
             j = j+1
+    color.pInfo('writing to '+txn_file+' .')
     transactions.to_csv(txn_file,index=False)
     color.pDone('Done')
 
@@ -138,7 +166,10 @@ def sequence(df):
     time_ins = {}
     val_in = []
     time_in = []
-    addr = ins['address'][0]
+    addr_ins = []
+    addrs = ins['address'].values
+    addrs = [eval(x)[0] for x in addrs]
+    addr = addrs[0]
 
     for i in range(ins.shape[0]):
         value = ins['value'][i]
@@ -146,16 +177,20 @@ def sequence(df):
         time = datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
         time = time.timestamp()
 
-        if addr == ins['address'][i]:
+        if addr == addrs[i]:
             val_in.append(value)
             time_in.append(time)
         else:
-            val_ins[index]=val_in
-            time_ins[index]=time_in
+            val_ins[i]=str(val_in)
+            time_ins[i]=str(time_in)
             val_in = [value]
             time_in = [time]
-        addr = ins['address'][i]
-    return ins['address'].values,val_ins, time_ins
+            addr_ins.append(addr)
+        addr = addrs[i]
+    val_ins = list(val_ins.values())
+    time_ins = list(time_ins.values())
+    
+    return addr_ins,val_ins, time_ins
 
 def deal_feature(file_in, file_out, file_feature, ponzi=None):
     color.pInfo('Dealing with features')
@@ -166,9 +201,12 @@ def deal_feature(file_in, file_out, file_feature, ponzi=None):
 
     addr_in, val_ins, time_ins = sequence(ins)
     addr_out, val_outs, time_outs = sequence(outs)
-
-    df_in = pd.DataFrame([addr_in,val_ins,time_ins], columns=['address','val_in','time_in'])
-    df_out = pd.DataFrame([addr_out,val_ins,time_outs], columns=['address','val_out','time_out'])
+    
+    ins = [[addr_in[i],val_ins[i],time_ins[i]] for i in range(len(addr_in))]
+    outs = [[addr_out[i],val_outs[i],time_outs[i]] for i in range(len(addr_out))]
+    
+    df_in = pd.DataFrame(ins, columns=['address','val_in','time_in'])
+    df_out = pd.DataFrame(outs, columns=['address','val_out','time_out'])
 
     # for i in range(max(ins.shape[0],outs.shape[0])):
     #     contract = [i, ponzi] if ponzi else [i]
