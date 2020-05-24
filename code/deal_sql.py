@@ -139,18 +139,15 @@ def deal_in_timestamp(txn_file, time_file):
                 if num%1000000==0:
                     color.pInfo('dealed '+str(num)+' timestamps')
             line = f.readline().strip()
-    color.pImportant('adding timestamps to transaction')
+    color.pInfo('adding timestamps to transaction')
     j = 0
     last = transactions['address'][0]
     for i in range(transactions.shape[0]):
-        if i%100000==0:
-            color.pImportant('transaction '+str(i))
-
         if transactions['address'][i]:
             # not empty
             transactions.loc[i,'timestamp'] = timestamps[j]
             if transactions['address'][i]!=last:
-                color.pInfo('transaction:'+str(i)+transactions['address'][i]+'timestamp:'+str(j))
+                color.pInfo(transactions['address'][i]+' transaction:'+str(i))
             
             last = transactions['address'][i]
             j = j+1
