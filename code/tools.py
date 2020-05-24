@@ -21,11 +21,9 @@
 import ast
 import numpy as np
 import pandas as pd
-# from web3.auto import w3
 import tools as tl
+import color
 import os
-# from arff2pandas import a2p
-from scipy import stats
 import json
 
 import time
@@ -57,7 +55,7 @@ def gini(array):
 
 def compute_time(t0):
     
-    print("computation done in " + str(time.clock() - t0) +"s")
+    color.pInfo("computation done in " + str(time.clock() - t0) +"s")
     
     return time.clock()
 
@@ -80,15 +78,15 @@ def maxi(tab):
     else:
         return 0
         
-def basic_features(ponzi,time_in,time_out,val_in,val_out):
+def basic_features(ponzi,address,time_in,time_out,val_in,val_out):
     # array|string: val_in, val_out
     # array|datatime.timestamp(): time_in, time_out
     N_in = N_out = 1
-    if time_in=='0':
+    if time_in=='0' or time_in==0:
         time_in = time_out
         N_in = 0
 
-    if time_out=='0':
+    if time_out=='0' or time_out==0:
         time_out = time_in
         N_out = 0
     
@@ -104,7 +102,8 @@ def basic_features(ponzi,time_in,time_out,val_in,val_out):
     times = np.concatenate((time_in, time_out))
 
     res = np.asarray([
-            ponzi,
+            #ponzi,
+            address,
             N_in,
             N_out,
             np.sum(val_in),
@@ -126,7 +125,7 @@ def open_data(opcodes):
 
     t0 = time.clock()
     
-    print("tools.opend_data: define variables...")
+    color.pInfo("tools.opend_data: define variables...")
     
     path = '/Users/e31989/Desktop/e31989/Documents/sm_database/'
     
@@ -143,7 +142,7 @@ def open_data(opcodes):
     
     #Open databases to access info
     
-    print("tools.open_data: open databases...")
+    color.pInfo("tools.open_data: open databases...")
     #ponzi instances
     with open(database_nml, 'r') as f:
         raw_nml= f.readlines()

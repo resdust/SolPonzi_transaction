@@ -26,7 +26,7 @@ def readAddr(addr):
             a = line
             addrs.append(a)
     '''
-    addrs = pd.read_csv(addr)
+    addrs = pd.read_csv(addr,header=-1)
     addrs = addrs.values
     print('read addrs number:',len(addrs))
     return addrs
@@ -137,7 +137,7 @@ def deal_in_timestamp(txn_file, time_file):
                 timestamps.append(line)
                 num = num+1
                 if num%1000000==0:
-                    color.pInfo('dealed '+str(num)+' timestamps')
+                    color.pDone('dealed '+str(num)+' timestamps')
             line = f.readline().strip()
     color.pInfo('adding timestamps to transaction')
     j = 0
@@ -189,7 +189,7 @@ def sequence(df):
     
     return addr_ins,val_ins, time_ins
 
-def deal_feature(file_in, file_out, file_feature, ponzi=None):
+def deal_feature(file_in, file_out, file_data, ponzi=None):
     color.pInfo('Dealing with features')
     contracts = []
 
@@ -221,8 +221,8 @@ def deal_feature(file_in, file_out, file_feature, ponzi=None):
     #         contract.append('')
     #     contracts.append(contract)
     df = pd.concat([df_in,df_out],join='outer',axis=1)
-    df.to_csv(file_feature, index=False)
-    color.pDone('Have generated '+file_feature+'.')
+    df.to_csv(file_data, index=False)
+    color.pDone('Have generated '+file_data+'.')
 
 if __name__=='__main__':
     ponzi_val_in = os.path.join('database','ponzi_val_in.out')

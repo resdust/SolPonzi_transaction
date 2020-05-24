@@ -12,6 +12,7 @@ import os
 import sys
 import pandas as pd
 import pexpect
+import features as feature
 import deal_sql
 import color
 
@@ -178,16 +179,27 @@ if __name__=='__main__':
     dirPath = 'test_addr'
     addrs = os.listdir(dirPath)
     p = connectPSQL(psql)
-    
+    ''' 
     for addr in addrs:
         if addr[0]!='d':
             color.pImportant('addr file: '+addr)
             full_path = os.path.join(dirPath,addr)
-            feature_file = 'test_'+addr.split('.')[0].split('_')[1]+'_feature.csv'
-            feature_file = os.path.join('feature',feature_file)
+            data_file = 'test_'+addr.split('.')[0].split('_')[1]+'_database.csv'
+            data_file = os.path.join('result',data_file)
             in_csv = collectTxnIn(p,full_path)
             out_csv = collectTxnOut(p,full_path)
-            deal_sql.deal_feature(in_csv, out_csv, feature_file)
+            deal_sql.deal_feature(in_csv, out_csv, data_file)
+            feature.extract(data_file)
            
             os.rename(full_path,os.path.join(dirPath,'done-'+addr))
+    '''     
+    addr = 'add_ponzi_test.csv'
+    color.pImportant('addr file: '+addr)
+    full_path = os.path.join(dirPath,addr)
+    data_file = 'test_'+addr.split('.')[0].split('_')[1]+'_database.csv'
+    data_file = os.path.join('result',data_file)
+    in_csv = collectTxnIn(p,full_path)
+    out_csv = collectTxnOut(p,full_path)
+    deal_sql.deal_feature(in_csv, out_csv, data_file)
+    feature.extract(data_file)
     p.close()    
