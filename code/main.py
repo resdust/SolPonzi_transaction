@@ -193,7 +193,7 @@ if __name__=='__main__':
            
             os.rename(full_path,os.path.join(dirPath,'done-'+addr))
     '''     
-    addr = 'add_ponzi_test.csv'
+    addr = 'add_ponzi_train.csv'
     color.pImportant('addr file: '+addr)
     full_path = os.path.join(dirPath,addr)
     data_file = 'test_'+addr.split('.')[0].split('_')[1]+'_database.csv'

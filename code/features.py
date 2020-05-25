@@ -52,7 +52,7 @@ def extract(database):
 
     df_features = pd.DataFrame(tx_features,columns=f_names)
     name = os.path.basename(database).split('.')[0]
-    f_file = os.path.join('feature',name.split('_')[0]+name.split('_')[1]+'_feature.csv')
+    f_file = os.path.join('feature',name.split('_')[0]+'_'+name.split('_')[1]+'_feature.csv')
     df_features.to_csv(f_file,index=None)
     color.pDone('Have written feature file '+ f_file+'.')
 
