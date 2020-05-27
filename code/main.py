@@ -12,6 +12,7 @@ import os
 import sys
 import pandas as pd
 import pexpect
+import features as feature
 import deal_sql
 import color
 
@@ -47,7 +48,9 @@ def getTime():
 def connectPSQL(psql):
     import getpass
 
-    p = pexpect.spawn(psql,logfile=sys.stdoutin)
+    p = pexpect.spawn(psql)
+    logfile = open(os.path.join('log','psql.log'),'ab')
+    p.logfile = logfile
 
     p.expect('gby:') 
     pwd = getpass.getpass('Password:')
@@ -99,8 +102,7 @@ def collectTxnIn(p, addr, timeout=200):
         '\' and value!=\'0\';'
         ]
     name = os.path.basename(addr).split('.')[0]
-    color.pInfo('address file name: '+name)
-   
+      
     # send command to sql process
     out_file = os.path.join('result',name+'_in.out')
     color.pInfo('Sending incoming transaction query to psql server')
@@ -108,22 +110,22 @@ def collectTxnIn(p, addr, timeout=200):
     p.expect('#')
     sq.val_sql(addr, query_in, p)
     color.pDone('Have generated '+out_file+'.')
-
+    
     # send command to sql process
     txn_file = os.path.join('result',name+'_in.csv')
     time_file = os.path.join('result',name+'_time.out')
     block_hash = deal_sql.deal_in(addr, out_file, txn_file)
-
+    
     color.pInfo('Sending incoming timestamp query to psql server')
     p.sendline('\o '+time_file)
     p.expect('#')
     sq.timestamp_sql(block_hash, p)
     color.pDone('Have generated '+time_file+'.')
-
+    
     # collect the query result into txn features
-    txn_file = os.path.join('result',addr.split('.')[0]+'_in.csv')
+    txn_file = os.path.join('result',name+'_in.csv')
     deal_sql.deal_in_timestamp(txn_file, time_file)
-
+    
     return txn_file
 
 def collectTxnOut(p, addr, timeout=200):
@@ -131,19 +133,19 @@ def collectTxnOut(p, addr, timeout=200):
 
     color.pInfo('Collecting transactions out of contract')
     query_out = [
-        'select timestamp, value from internal_transaction where from_address=\'\\',
+        'select timestamp, value from internal_transaction where from_address=\'',
         '\' and value!=\'0\';\r'
     ]
     name = os.path.basename(addr).split('.')[0]
-    color.pInfo('address file name: '+name)
-
+    
     # send command to sql process
     out_file = os.path.join('result',name+'_out.out')
     color.pInfo('Sending outcoming transaction query to psql server')
     p.sendline('\o '+out_file)
     p.expect('#')
     sq.val_sql(addr, query_out, p)
-
+    color.pDone('Have generated '+out_file+'.')
+    
     # collect the query result into txn features
     txn_file = os.path.join('result',name+'_out.csv')
     deal_sql.deal_out(addr, out_file, txn_file)
@@ -176,15 +178,28 @@ if __name__=='__main__':
 
     dirPath = 'test_addr'
     addrs = os.listdir(dirPath)
+    p = connectPSQL(psql)
+    ''' 
     for addr in addrs:
         if addr[0]!='d':
-            p = connectPSQL(psql)
+            color.pImportant('addr file: '+addr)
             full_path = os.path.join(dirPath,addr)
-            feature = 'test_'+addr.split('.')[0].split('_')[1]+'.csv'
-
+            data_file = 'test_'+addr.split('.')[0].split('_')[1]+'_database.csv'
+            data_file = os.path.join('result',data_file)
             in_csv = collectTxnIn(p,full_path)
             out_csv = collectTxnOut(p,full_path)
-            deal_sql.deal_feature(in_csv, out_csv, feature)
-            
+            deal_sql.deal_feature(in_csv, out_csv, data_file)
+            feature.extract(data_file)
+           
             os.rename(full_path,os.path.join(dirPath,'done-'+addr))
-            p.close()    
+    '''     
+    addr = 'add_ponzi_train.csv'
+    color.pImportant('addr file: '+addr)
+    full_path = os.path.join(dirPath,addr)
+    data_file = 'test_'+addr.split('.')[0].split('_')[1]+'_database.csv'
+    data_file = os.path.join('result',data_file)
+    in_csv = collectTxnIn(p,full_path)
+    out_csv = collectTxnOut(p,full_path)
+    deal_sql.deal_feature(in_csv, out_csv, data_file)
+    feature.extract(data_file)
+    p.close()    

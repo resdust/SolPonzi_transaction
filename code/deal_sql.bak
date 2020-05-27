@@ -1,7 +1,6 @@
-import os,sys
+import os
+import sys
 import pandas as pd
-import color
-import sql_query as sq
 
 names_feature = ['address','time_in','val_in','time_out','val_out']
 names_transaction = ['address','timestamp','value']
@@ -13,8 +12,6 @@ Then excure the query files on database server to get out files.
 """
 
 def readAddr(addr):
-    import pandas as pd
-    '''
     with open(addr)as f:
         addrs = []
         lines = f.readlines()
@@ -25,46 +22,42 @@ def readAddr(addr):
         if line[0]=='\\':
             a = line
             addrs.append(a)
-    '''
-    addrs = pd.read_csv(addr,header=-1)
-    addrs = addrs.values
-    print('read addrs number:',len(addrs))
     return addrs
 
 def deal_out(addr_file,in_file,to_file): 
-    color.pInfo('Dealing with '+in_file)
     os.system('echo \"EOF\" >> '+in_file)
 
+    print('-----Dealing with '+in_file+' -----')
     address = readAddr(addr_file)
     transactions = []
 
     with open(in_file,'r',encoding='utf-8') as f:
-        line = f.readline().strip()
+        line = f.readline()
         index = 0
         while(line!='EOF'):
+            line = line.strip()
             data = []
             if line == '':
-                line = f.readline().strip()
+                line = f.readline()
                 continue
 
             if line[0] == '(':
                 index = index+1
 
-            if line[0] =='2':
+            if line[0] =='\\':
                 attributes = line.split('|')
                 for i in range(len(attributes)):
                     attributes[i] = attributes[i].strip()
                 data = [address[index], attributes[0], attributes[1]]
                 transactions.append(data)
-            line = f.readline().strip()
+            line = f.readline()
 
-    color.pInfo('collected '+str(len(transactions))+' transactions.')
     df = pd.DataFrame(data=transactions, columns=names_transaction)
     df.to_csv(to_file,index=False)
-    color.pDone('Done')
+    print('-----Done------')
 
 def deal_in(addr_file, in_file, to_file): 
-    color.pInfo('Dealing with '+in_file)
+    print('-----Dealing with '+in_file+' -----')
     os.system('echo \"EOF\" >> '+in_file)
 
     address = readAddr(addr_file)
@@ -81,7 +74,6 @@ def deal_in(addr_file, in_file, to_file):
     
             if line[0] == '(':
                 index = index + 1
-
             data = []
             if line[0] =='\\':
                 attributes = line.split('|')
@@ -89,27 +81,29 @@ def deal_in(addr_file, in_file, to_file):
                     attributes[i] = attributes[i].strip()
                 try:
                     data = [address[index], '',attributes[1]]
-                    block_hash.append(attributes[0])
-                    transactions.append(data)
-                except:
-                    color.pError('out of index')
-                    print('index',index)
-                    print('attribute',attributes)
-                    break
-                    
+                except:    
+                    print('attributes:',attributes)
+                    print('address['+str(index)+']:',address[index])
+                    sys.exit(1)
+                block_hash.append(attributes[0])
+                transactions.append(data)
             line = f.readline().strip()
 
+    print('writing '+to_file)
     df = pd.DataFrame(data=transactions, columns=names_transaction)
     df.to_csv(to_file,index=False)
-    color.pDone('Done')
+    print('-----Done------')
     '''
     Cause the external transaction does not have a timestamp clumns in its table,
-    record block hashes, 
+    record block hashes dumping into file, 
     then pull timestamp of the block as the timestamp of transactions
     '''
-    
-    return block_hash
+    hash_file = os.path.join('sql',os.path.basename(addr_file).split('.')[0]+'_hash.sql')
+    hashes = pd.DataFrame(data=block_hash,columns=['block_hash'])
+    hashes.to_csv(hash_file,index=False)
+    print('Generated '+hash_file)
 
+    return hash_file
 
 
 """
@@ -119,41 +113,30 @@ Then excure the query file on database server.
 """
 
 def deal_in_timestamp(txn_file, time_file):
-    color.pInfo('Dealing with '+time_file)
-    os.system('echo \"EOF\" >> '+time_file)
-
-    transactions = pd.read_csv(txn_file, low_memory=False)
+    print('-----Dealing with '+time_file+' -----')
+    transactions = pd.read_csv(txn_file)
     timestamps = []
-    num = 0
 
     with open(time_file,'r',encoding='utf-8') as f:
-        line = f.readline().strip()
+        line = f.readline()
         while(line!='EOF'):
+            line = line.strip()
             if line == '':
-                line = f.readline().strip()
+                line = f.readline()
                 continue
 
             if line[0] =='2':
                 timestamps.append(line)
-                num = num+1
-                if num%1000000==0:
-                    color.pDone('dealed '+str(num)+' timestamps')
-            line = f.readline().strip()
-    color.pInfo('adding timestamps to transaction')
+            line = f.readline()
+
     j = 0
-    last = transactions['address'][0]
     for i in range(transactions.shape[0]):
         if transactions['address'][i]:
             # not empty
             transactions.loc[i,'timestamp'] = timestamps[j]
-            if transactions['address'][i]!=last:
-                color.pInfo(transactions['address'][i]+' transaction:'+str(i))
-            
-            last = transactions['address'][i]
             j = j+1
-    color.pInfo('writing to '+txn_file+' .')
     transactions.to_csv(txn_file,index=False)
-    color.pDone('Done')
+    print('-----Done------')
 
 def sequence(df):
     from datetime import datetime
@@ -163,10 +146,7 @@ def sequence(df):
     time_ins = {}
     val_in = []
     time_in = []
-    addr_ins = []
-    addrs = ins['address'].values
-    addrs = [eval(x)[0] for x in addrs]
-    addr = addrs[0]
+    addr = ins['address'][0]
 
     for i in range(ins.shape[0]):
         value = ins['value'][i]
@@ -174,23 +154,19 @@ def sequence(df):
         time = datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
         time = time.timestamp()
 
-        if addr == addrs[i]:
+        if addr == ins['address'][i]:
             val_in.append(value)
             time_in.append(time)
         else:
-            val_ins[i]=str(val_in)
-            time_ins[i]=str(time_in)
+            val_ins[index]=val_in
+            time_ins[index]=time_in
             val_in = [value]
             time_in = [time]
-            addr_ins.append(addr)
-        addr = addrs[i]
-    val_ins = list(val_ins.values())
-    time_ins = list(time_ins.values())
-    
-    return addr_ins,val_ins, time_ins
+        addr = ins['address'][i]
+    return ins['address'].values,val_ins, time_ins
 
-def deal_feature(file_in, file_out, file_data, ponzi=None):
-    color.pInfo('Dealing with features')
+def deal_feature(file_in, file_out, file_feature, ponzi=None):
+    print('-----Dealing with features-----')
     contracts = []
 
     ins = pd.read_csv(file_in,encoding='utf-8')
@@ -198,12 +174,9 @@ def deal_feature(file_in, file_out, file_data, ponzi=None):
 
     addr_in, val_ins, time_ins = sequence(ins)
     addr_out, val_outs, time_outs = sequence(outs)
-    
-    ins = [[addr_in[i],val_ins[i],time_ins[i]] for i in range(len(addr_in))]
-    outs = [[addr_out[i],val_outs[i],time_outs[i]] for i in range(len(addr_out))]
-    
-    df_in = pd.DataFrame(ins, columns=['address','val_in','time_in'])
-    df_out = pd.DataFrame(outs, columns=['address','val_out','time_out'])
+
+    df_in = pd.DataFrame([addr_in,val_ins,time_ins], columns=['address','val_in','time_in'])
+    df_out = pd.DataFrame([addr_out,val_ins,time_outs], columns=['address','val_out','time_out'])
 
     # for i in range(max(ins.shape[0],outs.shape[0])):
     #     contract = [i, ponzi] if ponzi else [i]
@@ -221,8 +194,8 @@ def deal_feature(file_in, file_out, file_data, ponzi=None):
     #         contract.append('')
     #     contracts.append(contract)
     df = pd.concat([df_in,df_out],join='outer',axis=1)
-    df.to_csv(file_data, index=False)
-    color.pDone('Have generated '+file_data+'.')
+    df.to_csv(file_feature, index=False)
+    print('-----Have generated '+file_feature+'.-----')
 
 if __name__=='__main__':
     ponzi_val_in = os.path.join('database','ponzi_val_in.out')
