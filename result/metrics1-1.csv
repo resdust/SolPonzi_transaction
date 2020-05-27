@@ -1,0 +1,12 @@
+,accuracy,precision,recall,f1-score,AUC
+#每个指标×成功检测率,,,,,
+symChecker,0.728,0.774,0.668,0.717,0.395
+BehaviorChecker,0.634,0.607,0.753,0.672,0.79
+Synthetic,0.875,0.946,0.819,0.878,0.48
+,,,,,
+#去除failed无法检测的情况,,,,,
+symChecker,0.921,0.98,0.846,0.908,0.5
+BehaviorChecker,0.802,0.769,0.953,0.851,1
+Synthetic,0.912,0.986,0.854,0.915,0.5
+,,,,,
+#ponzi:dapp=135:135,,,,,
